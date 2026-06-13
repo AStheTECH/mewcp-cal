@@ -148,3 +148,83 @@ def register_tools(mcp):
     )
     def get_org_routing_forms():
         return service.get_org_routing_forms()
+        # ---------------- EVENT TYPES ----------------
+
+    @mcp.tool(
+        name="get_event_type",
+        description="Get a specific event type by ID"
+    )
+    def get_event_type(
+        event_type_id: int = Field(
+            ...,
+            description="The event type ID"
+        )
+    ):
+        return service.get_event_type(event_type_id)
+
+    @mcp.tool(
+        name="create_event_type",
+        description="Create a new event type"
+    )
+    def create_event_type(
+        title: str = Field(
+            ...,
+            description="Title of the event type"
+        )
+    ):
+        return service.create_event_type(title)
+
+    # ---------------- BOOKINGS ----------------
+
+    @mcp.tool(
+        name="create_booking",
+        description="Create a new booking"
+    )
+    def create_booking(
+        event_type_id: int = Field(
+            ...,
+            description="Event type ID"
+        ),
+        start: str = Field(
+            ...,
+            description="Booking start datetime"
+        ),
+        attendee_name: str = Field(
+            ...,
+            description="Attendee full name"
+        ),
+        attendee_email: str = Field(
+            ...,
+            description="Attendee email address"
+        )
+    ):
+        return service.create_booking(
+            event_type_id,
+            start,
+            attendee_name,
+            attendee_email
+        )
+
+    @mcp.tool(
+        name="confirm_booking",
+        description="Confirm a pending booking"
+    )
+    def confirm_booking(
+        booking_id: str = Field(
+            ...,
+            description="Booking ID"
+        )
+    ):
+        return service.confirm_booking(booking_id)
+
+    @mcp.tool(
+        name="mark_booking_absent",
+        description="Mark a booking as absent"
+    )
+    def mark_booking_absent(
+        booking_id: str = Field(
+            ...,
+            description="Booking ID"
+        )
+    ):
+        return service.mark_booking_absent(booking_id)

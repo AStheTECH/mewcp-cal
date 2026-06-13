@@ -281,3 +281,106 @@ def get_org_routing_forms():
             "status": "error",
             "message": str(e)
         }
+    # ---------------- EVENT TYPES ----------------
+
+def get_event_type(event_type_id: int):
+    try:
+        response = requests.get(
+            f"{CAL_API_BASE}/event-types/{event_type_id}",
+            headers=get_headers(),
+            timeout=API_TIMEOUT
+        )
+
+        return response.json()
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+def create_event_type(title: str):
+    try:
+        response = requests.post(
+            f"{CAL_API_BASE}/event-types",
+            headers=get_headers(),
+            json={
+                "title": title
+            },
+            timeout=API_TIMEOUT
+        )
+
+        return response.json()
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+# ---------------- BOOKINGS ----------------
+
+def create_booking(
+    event_type_id: int,
+    start: str,
+    attendee_name: str,
+    attendee_email: str
+):
+    try:
+        response = requests.post(
+            f"{CAL_API_BASE}/bookings",
+            headers=get_headers(),
+            json={
+                "eventTypeId": event_type_id,
+                "start": start,
+                "attendee": {
+                    "name": attendee_name,
+                    "email": attendee_email
+                }
+            },
+            timeout=API_TIMEOUT
+        )
+
+        return response.json()
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+def confirm_booking(booking_id: str):
+    try:
+        response = requests.post(
+            f"{CAL_API_BASE}/bookings/{booking_id}/confirm",
+            headers=get_headers(),
+            timeout=API_TIMEOUT
+        )
+
+        return response.json()
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+def mark_booking_absent(booking_id: str):
+    try:
+        response = requests.post(
+            f"{CAL_API_BASE}/bookings/{booking_id}/absence",
+            headers=get_headers(),
+            timeout=API_TIMEOUT
+        )
+
+        return response.json()
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
