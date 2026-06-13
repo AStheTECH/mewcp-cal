@@ -61,3 +61,135 @@ def get_bookings():
     )
 
     return response.json()
+
+
+# ---------------- BOOKINGS ----------------
+
+def get_booking(booking_id: str):
+
+    response = requests.get(
+        f"{CAL_API_BASE}/bookings/{booking_id}",
+        headers=get_headers(),
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+def cancel_booking(booking_id: str):
+
+    response = requests.post(
+        f"{CAL_API_BASE}/bookings/{booking_id}/cancel",
+        headers=get_headers(),
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+def reschedule_booking(
+    booking_id: str,
+    start: str,
+    end: str
+):
+
+    response = requests.post(
+        f"{CAL_API_BASE}/bookings/{booking_id}/reschedule",
+        headers=get_headers(),
+        json={
+            "start": start,
+            "end": end
+        },
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+# ---------------- SCHEDULES ----------------
+
+def get_schedule(schedule_id: str):
+
+    response = requests.get(
+        f"{CAL_API_BASE}/schedules/{schedule_id}",
+        headers=get_headers(),
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+def get_default_schedule():
+
+    response = requests.get(
+        f"{CAL_API_BASE}/schedules/default",
+        headers=get_headers(),
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+def create_schedule(name: str):
+
+    response = requests.post(
+        f"{CAL_API_BASE}/schedules",
+        headers=get_headers(),
+        json={
+            "name": name
+        },
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+# ---------------- AVAILABILITY ----------------
+
+def get_availability(date: str):
+
+    response = requests.get(
+        f"{CAL_API_BASE}/availability",
+        headers=get_headers(),
+        params={
+            "date": date
+        },
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+def get_busy_times():
+
+    response = requests.get(
+        f"{CAL_API_BASE}/busy-times",
+        headers=get_headers(),
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+# ---------------- ORGANIZATIONS ----------------
+
+def get_org_memberships():
+
+    response = requests.get(
+        f"{CAL_API_BASE}/organizations/memberships",
+        headers=get_headers(),
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()
+
+
+def get_org_routing_forms():
+
+    response = requests.get(
+        f"{CAL_API_BASE}/organizations/routing-forms",
+        headers=get_headers(),
+        timeout=API_TIMEOUT
+    )
+
+    return response.json()

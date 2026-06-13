@@ -8,7 +8,7 @@ def parse_args():
     parser.add_argument(
         "-t",
         "--transport",
-        default=None
+        default="streamable-http"
     )
 
     parser.add_argument(
