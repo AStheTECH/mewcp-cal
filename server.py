@@ -37,4 +37,9 @@ if __name__ == "__main__":
     if args.port:
         run_kwargs["port"] = args.port
 
-    mcp.run(**run_kwargs)
+    try:
+        mcp.run(**run_kwargs)
+
+    except Exception as e:
+        print(f"Failed to start server: {e}")
+        raise

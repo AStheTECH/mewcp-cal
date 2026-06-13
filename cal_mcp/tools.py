@@ -1,68 +1,150 @@
+from pydantic import Field
+
 from cal_mcp import service
 
 
 def register_tools(mcp):
 
-    @mcp.tool(description="Get authenticated user profile from Cal.com")
+    @mcp.tool(
+        name="get_my_profile",
+        description="Get authenticated user profile from Cal.com"
+    )
     def get_my_profile():
         return service.get_my_profile()
 
-    @mcp.tool(description="List all event types for the user")
+    @mcp.tool(
+        name="get_event_types",
+        description="List all event types for the user"
+    )
     def get_event_types():
         return service.get_event_types()
 
-    @mcp.tool(description="Get all schedules for the user")
+    @mcp.tool(
+        name="get_schedules",
+        description="Get all schedules for the user"
+    )
     def get_schedules():
         return service.get_schedules()
 
-    @mcp.tool(description="Get all bookings for the user")
+    @mcp.tool(
+        name="get_bookings",
+        description="Get all bookings for the user"
+    )
     def get_bookings():
         return service.get_bookings()
 
-    # ---------------- BOOKINGS EXPANSION ----------------
+    # ---------------- BOOKINGS ----------------
 
-    @mcp.tool(description="Get a specific booking by ID")
-    def get_booking(booking_id: str):
+    @mcp.tool(
+        name="get_booking",
+        description="Get a specific booking by ID"
+    )
+    def get_booking(
+        booking_id: str = Field(
+            ...,
+            description="The booking ID to retrieve"
+        )
+    ):
         return service.get_booking(booking_id)
 
-    @mcp.tool(description="Cancel a booking")
-    def cancel_booking(booking_id: str):
+    @mcp.tool(
+        name="cancel_booking",
+        description="Cancel a booking"
+    )
+    def cancel_booking(
+        booking_id: str = Field(
+            ...,
+            description="The booking ID to cancel"
+        )
+    ):
         return service.cancel_booking(booking_id)
 
-    @mcp.tool(description="Reschedule an existing booking")
-    def reschedule_booking(booking_id: str, start: str, end: str):
+    @mcp.tool(
+        name="reschedule_booking",
+        description="Reschedule an existing booking"
+    )
+    def reschedule_booking(
+        booking_id: str = Field(
+            ...,
+            description="The booking ID to reschedule"
+        ),
+        start: str = Field(
+            ...,
+            description="New start time"
+        ),
+        end: str = Field(
+            ...,
+            description="New end time"
+        )
+    ):
         return service.reschedule_booking(booking_id, start, end)
 
-    # ---------------- SCHEDULE EXPANSION ----------------
+    # ---------------- SCHEDULES ----------------
 
-    @mcp.tool(description="Get a specific schedule by ID")
-    def get_schedule(schedule_id: str):
+    @mcp.tool(
+        name="get_schedule",
+        description="Get a specific schedule by ID"
+    )
+    def get_schedule(
+        schedule_id: str = Field(
+            ...,
+            description="The schedule ID"
+        )
+    ):
         return service.get_schedule(schedule_id)
 
-    @mcp.tool(description="Get default schedule")
+    @mcp.tool(
+        name="get_default_schedule",
+        description="Get default schedule"
+    )
     def get_default_schedule():
         return service.get_default_schedule()
 
-    @mcp.tool(description="Create a new schedule")
-    def create_schedule(name: str):
+    @mcp.tool(
+        name="create_schedule",
+        description="Create a new schedule"
+    )
+    def create_schedule(
+        name: str = Field(
+            ...,
+            description="Name of the schedule to create"
+        )
+    ):
         return service.create_schedule(name)
 
     # ---------------- AVAILABILITY ----------------
 
-    @mcp.tool(description="Get available time slots")
-    def get_availability(date: str):
+    @mcp.tool(
+        name="get_availability",
+        description="Get available time slots"
+    )
+    def get_availability(
+        date: str = Field(
+            ...,
+            description="Date in YYYY-MM-DD format"
+        )
+    ):
         return service.get_availability(date)
 
-    @mcp.tool(description="Get busy times from calendars")
-    def get_busy_times(date: str):
+    @mcp.tool(
+        name="get_busy_times",
+        description="Get busy times from calendars"
+    )
+    def get_busy_times():
         return service.get_busy_times()
 
     # ---------------- ORGANIZATION ----------------
 
-    @mcp.tool(description="Get organization memberships")
+    @mcp.tool(
+        name="get_org_memberships",
+        description="Get organization memberships"
+    )
     def get_org_memberships():
         return service.get_org_memberships()
 
-    @mcp.tool(description="Get organization routing forms")
+    @mcp.tool(
+        name="get_org_routing_forms",
+        description="Get organization routing forms"
+    )
     def get_org_routing_forms():
         return service.get_org_routing_forms()
