@@ -1,8 +1,5 @@
 from fastmcp import FastMCP
-from fastmcp_credentials import (
-    CredentialMiddleware,
-    HeaderCredentialBackend
-)
+from fastmcp_credentials import CredentialMiddleware, HeaderCredentialBackend
 
 from cal_mcp.cli import parse_args
 from cal_mcp.tools import register_tools
@@ -10,20 +7,14 @@ from cal_mcp.tools import register_tools
 backend = HeaderCredentialBackend()
 
 mcp = FastMCP(
-    "MewCP Cal.com MCP Server",
-    middleware=[CredentialMiddleware(backend, "static")]
+    "MewCP Cal MCP Server", middleware=[CredentialMiddleware(backend, "static")]
 )
 
 register_tools(mcp)
 
-app = mcp.http_app(
-    path="/mcp",
-    transport="streamable-http",
-    stateless_http=True
-)
+app = mcp.http_app(path="/mcp", transport="streamable-http", stateless_http=True)
 
 if __name__ == "__main__":
-
     args = parse_args()
 
     run_kwargs = {}
