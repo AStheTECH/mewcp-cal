@@ -1,0 +1,953 @@
+{
+  "manifest_version": 1,
+  "server": {
+    "name": "mewcp-cal",
+    "package": "cal_mcp",
+    "auth": "static",
+    "version": "v1.1.0",
+    "api_base": "https://api.cal.com/v2"
+  },
+  "tools": {
+    "groups": {
+      "availability": {
+        "file": "availability_tools.py",
+        "doc_source": "",
+        "register_fn": "register_availability_tools",
+        "tools": {
+          "get_availability": {
+            "endpoint": "GET /availability",
+            "description": "Get available time slots",
+            "tier": "GET",
+            "params": [
+              {
+                "name": "date",
+                "type": "str",
+                "required": true,
+                "description": "Date in YYYY-MM-DD format"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "date",
+                "type": "str"
+              },
+              {
+                "name": "timeZone",
+                "type": "str"
+              },
+              {
+                "name": "count",
+                "type": "int"
+              },
+              {
+                "name": "slots",
+                "type": "list[SlotData]"
+              },
+              {
+                "name": "slots[].start",
+                "type": "str"
+              },
+              {
+                "name": "slots[].end",
+                "type": "str"
+              },
+              {
+                "name": "slots[].time",
+                "type": "str"
+              },
+              {
+                "name": "slots[].attendees",
+                "type": "int"
+              },
+              {
+                "name": "slots[].bookingUid",
+                "type": "str"
+              }
+            ],
+            "schema": {
+              "data": "AvailabilityData",
+              "result": "AvailabilityResult"
+            }
+          },
+          "get_busy_times": {
+            "endpoint": "GET /busy-times",
+            "description": "Get busy times from calendars",
+            "tier": "GET",
+            "params": [],
+            "response_fields": [
+              {
+                "name": "count",
+                "type": "int"
+              },
+              {
+                "name": "busy_times",
+                "type": "list[BusyTimeData]"
+              },
+              {
+                "name": "busy_times[].start",
+                "type": "str"
+              },
+              {
+                "name": "busy_times[].end",
+                "type": "str"
+              },
+              {
+                "name": "busy_times[].source",
+                "type": "str"
+              },
+              {
+                "name": "busy_times[].title",
+                "type": "str"
+              }
+            ],
+            "schema": {
+              "data": "BusyTimeListData",
+              "result": "BusyTimeListResult"
+            }
+          }
+        }
+      },
+      "bookings": {
+        "file": "bookings_tools.py",
+        "doc_source": "",
+        "register_fn": "register_bookings_tools",
+        "tools": {
+          "get_bookings": {
+            "endpoint": "GET /bookings",
+            "description": "Get all bookings for the user",
+            "tier": "GET",
+            "params": [],
+            "response_fields": [
+              {
+                "name": "count",
+                "type": "int"
+              },
+              {
+                "name": "bookings",
+                "type": "list[BookingData]"
+              }
+            ],
+            "schema": {
+              "data": "BookingListData",
+              "result": "BookingListResult"
+            }
+          },
+          "get_booking": {
+            "endpoint": "GET /bookings/{booking_id}",
+            "description": "Get a specific booking by ID",
+            "tier": "GET",
+            "params": [
+              {
+                "name": "booking_id",
+                "type": "str",
+                "required": true,
+                "description": "The booking ID to retrieve"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "id",
+                "type": "int"
+              },
+              {
+                "name": "uid",
+                "type": "str"
+              },
+              {
+                "name": "title",
+                "type": "str"
+              },
+              {
+                "name": "description",
+                "type": "str"
+              },
+              {
+                "name": "status",
+                "type": "str"
+              },
+              {
+                "name": "start",
+                "type": "str"
+              },
+              {
+                "name": "end",
+                "type": "str"
+              },
+              {
+                "name": "duration",
+                "type": "int"
+              },
+              {
+                "name": "eventTypeId",
+                "type": "int"
+              },
+              {
+                "name": "meetingUrl",
+                "type": "str"
+              },
+              {
+                "name": "location",
+                "type": "str"
+              },
+              {
+                "name": "absentHost",
+                "type": "bool"
+              },
+              {
+                "name": "cancellationReason",
+                "type": "str"
+              },
+              {
+                "name": "rescheduledFromUid",
+                "type": "str"
+              },
+              {
+                "name": "rescheduledToUid",
+                "type": "str"
+              },
+              {
+                "name": "attendees",
+                "type": "list[BookingAttendeeData]"
+              },
+              {
+                "name": "hosts",
+                "type": "list[dict]"
+              }
+            ],
+            "schema": {
+              "data": "BookingData",
+              "result": "BookingResult"
+            }
+          },
+          "create_booking": {
+            "endpoint": "POST /bookings",
+            "description": "Create a new booking",
+            "tier": "CREATE",
+            "params": [
+              {
+                "name": "event_type_id",
+                "type": "int",
+                "required": true,
+                "description": "Event type ID"
+              },
+              {
+                "name": "start",
+                "type": "str",
+                "required": true,
+                "description": "Booking start datetime"
+              },
+              {
+                "name": "attendee_name",
+                "type": "str",
+                "required": true,
+                "description": "Attendee full name"
+              },
+              {
+                "name": "attendee_email",
+                "type": "str",
+                "required": true,
+                "description": "Attendee email address"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "id",
+                "type": "int"
+              },
+              {
+                "name": "uid",
+                "type": "str"
+              },
+              {
+                "name": "title",
+                "type": "str"
+              },
+              {
+                "name": "status",
+                "type": "str"
+              },
+              {
+                "name": "start",
+                "type": "str"
+              },
+              {
+                "name": "end",
+                "type": "str"
+              },
+              {
+                "name": "eventTypeId",
+                "type": "int"
+              },
+              {
+                "name": "meetingUrl",
+                "type": "str"
+              },
+              {
+                "name": "attendees",
+                "type": "list[BookingAttendeeData]"
+              }
+            ],
+            "schema": {
+              "data": "BookingData",
+              "result": "BookingCreateResult"
+            }
+          },
+          "cancel_booking": {
+            "endpoint": "POST /bookings/{booking_id}/cancel",
+            "description": "DESTRUCTIVE \u2014 REQUIRES EXPLICIT USER CONFIRMATION BEFORE CALLING. Cancel a booking; permanently cancels the booking and returns its state before cancellation.",
+            "tier": "DELETE",
+            "params": [
+              {
+                "name": "booking_id",
+                "type": "str",
+                "required": true,
+                "description": "The booking ID to cancel"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "before",
+                "type": "BookingData"
+              },
+              {
+                "name": "after",
+                "type": "BookingData"
+              }
+            ],
+            "schema": {
+              "data": "BookingCancelData",
+              "result": "BookingCancelResult"
+            }
+          },
+          "reschedule_booking": {
+            "endpoint": "POST /bookings/{booking_id}/reschedule",
+            "description": "Reschedule an existing booking; returns both the before and after state.",
+            "tier": "UPDATE",
+            "params": [
+              {
+                "name": "booking_id",
+                "type": "str",
+                "required": true,
+                "description": "The booking ID to reschedule"
+              },
+              {
+                "name": "start",
+                "type": "str",
+                "required": true,
+                "description": "New start time"
+              },
+              {
+                "name": "end",
+                "type": "str",
+                "required": true,
+                "description": "New end time"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "before",
+                "type": "BookingData"
+              },
+              {
+                "name": "after",
+                "type": "BookingData"
+              }
+            ],
+            "schema": {
+              "data": "BookingUpdateData",
+              "result": "BookingRescheduleResult"
+            }
+          },
+          "confirm_booking": {
+            "endpoint": "POST /bookings/{booking_id}/confirm",
+            "description": "Confirm a pending booking; returns both the before and after state.",
+            "tier": "UPDATE",
+            "params": [
+              {
+                "name": "booking_id",
+                "type": "str",
+                "required": true,
+                "description": "Booking ID"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "before",
+                "type": "BookingData"
+              },
+              {
+                "name": "after",
+                "type": "BookingData"
+              }
+            ],
+            "schema": {
+              "data": "BookingUpdateData",
+              "result": "BookingConfirmResult"
+            }
+          },
+          "mark_booking_absent": {
+            "endpoint": "POST /bookings/{booking_id}/absence",
+            "description": "Mark a booking as absent; returns both the before and after state.",
+            "tier": "UPDATE",
+            "params": [
+              {
+                "name": "booking_id",
+                "type": "str",
+                "required": true,
+                "description": "Booking ID"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "before",
+                "type": "BookingData"
+              },
+              {
+                "name": "after",
+                "type": "BookingData"
+              }
+            ],
+            "schema": {
+              "data": "BookingUpdateData",
+              "result": "BookingAbsentResult"
+            }
+          }
+        }
+      },
+      "event_types": {
+        "file": "event_types_tools.py",
+        "doc_source": "",
+        "register_fn": "register_event_types_tools",
+        "tools": {
+          "get_event_types": {
+            "endpoint": "GET /event-types",
+            "description": "List all event types for the user",
+            "tier": "GET",
+            "params": [],
+            "response_fields": [
+              {
+                "name": "count",
+                "type": "int"
+              },
+              {
+                "name": "event_types",
+                "type": "list[EventTypeData]"
+              },
+              {
+                "name": "event_types[].id",
+                "type": "int"
+              },
+              {
+                "name": "event_types[].title",
+                "type": "str"
+              },
+              {
+                "name": "event_types[].slug",
+                "type": "str"
+              },
+              {
+                "name": "event_types[].lengthInMinutes",
+                "type": "int"
+              },
+              {
+                "name": "event_types[].length",
+                "type": "int"
+              },
+              {
+                "name": "event_types[].description",
+                "type": "str"
+              },
+              {
+                "name": "event_types[].hidden",
+                "type": "bool"
+              },
+              {
+                "name": "event_types[].ownerId",
+                "type": "int"
+              }
+            ],
+            "schema": {
+              "data": "EventTypeListData",
+              "result": "EventTypeListResult"
+            }
+          },
+          "get_event_type": {
+            "endpoint": "GET /event-types/{event_type_id}",
+            "description": "Get a specific event type by ID",
+            "tier": "GET",
+            "params": [
+              {
+                "name": "event_type_id",
+                "type": "int",
+                "required": true,
+                "description": "The event type ID"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "id",
+                "type": "int"
+              },
+              {
+                "name": "title",
+                "type": "str"
+              },
+              {
+                "name": "slug",
+                "type": "str"
+              },
+              {
+                "name": "lengthInMinutes",
+                "type": "int"
+              },
+              {
+                "name": "length",
+                "type": "int"
+              },
+              {
+                "name": "description",
+                "type": "str"
+              },
+              {
+                "name": "hidden",
+                "type": "bool"
+              },
+              {
+                "name": "ownerId",
+                "type": "int"
+              }
+            ],
+            "schema": {
+              "data": "EventTypeData",
+              "result": "EventTypeGetResult"
+            }
+          },
+          "create_event_type": {
+            "endpoint": "POST /event-types",
+            "description": "Create a new event type",
+            "tier": "CREATE",
+            "params": [
+              {
+                "name": "title",
+                "type": "str",
+                "required": true,
+                "description": "Title of the event type"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "id",
+                "type": "int"
+              },
+              {
+                "name": "title",
+                "type": "str"
+              },
+              {
+                "name": "slug",
+                "type": "str"
+              },
+              {
+                "name": "lengthInMinutes",
+                "type": "int"
+              },
+              {
+                "name": "length",
+                "type": "int"
+              },
+              {
+                "name": "description",
+                "type": "str"
+              },
+              {
+                "name": "hidden",
+                "type": "bool"
+              },
+              {
+                "name": "ownerId",
+                "type": "int"
+              }
+            ],
+            "schema": {
+              "data": "EventTypeData",
+              "result": "EventTypeCreateResult"
+            }
+          }
+        }
+      },
+      "organizations": {
+        "file": "organizations_tools.py",
+        "doc_source": "",
+        "register_fn": "register_organizations_tools",
+        "tools": {
+          "get_org_memberships": {
+            "endpoint": "GET /organizations/memberships",
+            "description": "Get organization memberships",
+            "tier": "GET",
+            "params": [],
+            "response_fields": [
+              {
+                "name": "count",
+                "type": "int"
+              },
+              {
+                "name": "memberships",
+                "type": "list[OrgMembershipData]"
+              },
+              {
+                "name": "memberships[].id",
+                "type": "int"
+              },
+              {
+                "name": "memberships[].userId",
+                "type": "int"
+              },
+              {
+                "name": "memberships[].teamId",
+                "type": "int"
+              },
+              {
+                "name": "memberships[].organizationId",
+                "type": "int"
+              },
+              {
+                "name": "memberships[].role",
+                "type": "str"
+              },
+              {
+                "name": "memberships[].accepted",
+                "type": "bool"
+              },
+              {
+                "name": "memberships[].disableImpersonation",
+                "type": "bool"
+              },
+              {
+                "name": "memberships[].user",
+                "type": "OrgMembershipUserData"
+              },
+              {
+                "name": "memberships[].user.id",
+                "type": "int"
+              },
+              {
+                "name": "memberships[].user.email",
+                "type": "str"
+              },
+              {
+                "name": "memberships[].user.username",
+                "type": "str"
+              },
+              {
+                "name": "memberships[].user.name",
+                "type": "str"
+              }
+            ],
+            "schema": {
+              "data": "OrgMembershipListData",
+              "result": "OrgMembershipListResult"
+            }
+          },
+          "get_org_routing_forms": {
+            "endpoint": "GET /organizations/routing-forms",
+            "description": "Get organization routing forms",
+            "tier": "GET",
+            "params": [],
+            "response_fields": [
+              {
+                "name": "count",
+                "type": "int"
+              },
+              {
+                "name": "routing_forms",
+                "type": "list[OrgRoutingFormData]"
+              },
+              {
+                "name": "routing_forms[].id",
+                "type": "str"
+              },
+              {
+                "name": "routing_forms[].name",
+                "type": "str"
+              },
+              {
+                "name": "routing_forms[].description",
+                "type": "str"
+              },
+              {
+                "name": "routing_forms[].disabled",
+                "type": "bool"
+              },
+              {
+                "name": "routing_forms[].position",
+                "type": "int"
+              },
+              {
+                "name": "routing_forms[].userId",
+                "type": "int"
+              },
+              {
+                "name": "routing_forms[].teamId",
+                "type": "int"
+              },
+              {
+                "name": "routing_forms[].routes",
+                "type": "Any"
+              },
+              {
+                "name": "routing_forms[].fields",
+                "type": "Any"
+              },
+              {
+                "name": "routing_forms[].createdAt",
+                "type": "str"
+              },
+              {
+                "name": "routing_forms[].updatedAt",
+                "type": "str"
+              }
+            ],
+            "schema": {
+              "data": "OrgRoutingFormListData",
+              "result": "OrgRoutingFormListResult"
+            }
+          }
+        }
+      },
+      "profile": {
+        "file": "profile_tools.py",
+        "doc_source": "",
+        "register_fn": "register_profile_tools",
+        "tools": {
+          "get_my_profile": {
+            "endpoint": "GET /me",
+            "description": "Get authenticated user profile from Cal.com",
+            "tier": "GET",
+            "params": [],
+            "response_fields": [
+              {
+                "name": "id",
+                "type": "int"
+              },
+              {
+                "name": "username",
+                "type": "str"
+              },
+              {
+                "name": "email",
+                "type": "str"
+              },
+              {
+                "name": "name",
+                "type": "str"
+              },
+              {
+                "name": "timeZone",
+                "type": "str"
+              },
+              {
+                "name": "weekStart",
+                "type": "str"
+              },
+              {
+                "name": "locale",
+                "type": "str"
+              },
+              {
+                "name": "timeFormat",
+                "type": "int"
+              },
+              {
+                "name": "defaultScheduleId",
+                "type": "int"
+              },
+              {
+                "name": "organizationId",
+                "type": "int"
+              },
+              {
+                "name": "organization",
+                "type": "dict"
+              },
+              {
+                "name": "avatarUrl",
+                "type": "str"
+              },
+              {
+                "name": "bio",
+                "type": "str"
+              }
+            ],
+            "schema": {
+              "data": "ProfileData",
+              "result": "ProfileGetResult"
+            }
+          }
+        }
+      },
+      "schedules": {
+        "file": "schedules_tools.py",
+        "doc_source": "",
+        "register_fn": "register_schedules_tools",
+        "tools": {
+          "get_schedules": {
+            "endpoint": "GET /schedules",
+            "description": "Get all schedules for the user",
+            "tier": "GET",
+            "params": [],
+            "response_fields": [
+              {
+                "name": "count",
+                "type": "int"
+              },
+              {
+                "name": "schedules",
+                "type": "list[ScheduleData]"
+              }
+            ],
+            "schema": {
+              "data": "ScheduleListData",
+              "result": "ScheduleListResult"
+            }
+          },
+          "get_schedule": {
+            "endpoint": "GET /schedules/{schedule_id}",
+            "description": "Get a specific schedule by ID",
+            "tier": "GET",
+            "params": [
+              {
+                "name": "schedule_id",
+                "type": "str",
+                "required": true,
+                "description": "The schedule ID"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "id",
+                "type": "int"
+              },
+              {
+                "name": "ownerId",
+                "type": "int"
+              },
+              {
+                "name": "name",
+                "type": "str"
+              },
+              {
+                "name": "timeZone",
+                "type": "str"
+              },
+              {
+                "name": "isDefault",
+                "type": "bool"
+              },
+              {
+                "name": "availability",
+                "type": "list[ScheduleAvailabilityData]"
+              },
+              {
+                "name": "overrides",
+                "type": "list[dict]"
+              }
+            ],
+            "schema": {
+              "data": "ScheduleData",
+              "result": "ScheduleResult"
+            }
+          },
+          "get_default_schedule": {
+            "endpoint": "GET /schedules/default",
+            "description": "Get default schedule",
+            "tier": "GET",
+            "params": [],
+            "response_fields": [
+              {
+                "name": "id",
+                "type": "int"
+              },
+              {
+                "name": "ownerId",
+                "type": "int"
+              },
+              {
+                "name": "name",
+                "type": "str"
+              },
+              {
+                "name": "timeZone",
+                "type": "str"
+              },
+              {
+                "name": "isDefault",
+                "type": "bool"
+              },
+              {
+                "name": "availability",
+                "type": "list[ScheduleAvailabilityData]"
+              },
+              {
+                "name": "overrides",
+                "type": "list[dict]"
+              }
+            ],
+            "schema": {
+              "data": "ScheduleData",
+              "result": "ScheduleDefaultResult"
+            }
+          },
+          "create_schedule": {
+            "endpoint": "POST /schedules",
+            "description": "Create a new schedule",
+            "tier": "CREATE",
+            "params": [
+              {
+                "name": "name",
+                "type": "str",
+                "required": true,
+                "description": "Name of the schedule to create"
+              }
+            ],
+            "response_fields": [
+              {
+                "name": "id",
+                "type": "int"
+              },
+              {
+                "name": "ownerId",
+                "type": "int"
+              },
+              {
+                "name": "name",
+                "type": "str"
+              },
+              {
+                "name": "timeZone",
+                "type": "str"
+              },
+              {
+                "name": "isDefault",
+                "type": "bool"
+              },
+              {
+                "name": "availability",
+                "type": "list[ScheduleAvailabilityData]"
+              },
+              {
+                "name": "overrides",
+                "type": "list[dict]"
+              }
+            ],
+            "schema": {
+              "data": "ScheduleData",
+              "result": "ScheduleCreateResult"
+            }
+          }
+        }
+      }
+    }
+  },
+  "resources": {},
+  "prompts": {}
+}
