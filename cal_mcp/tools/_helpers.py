@@ -1,6 +1,7 @@
 """Shared error helpers for all tool modules."""
 
 import requests
+from pydantic import ValidationError
 
 from ..logging_utils import ToolLogger
 from ..schemas._base import ToolError
@@ -28,6 +29,13 @@ def _handle_request_exc(result_class, tlog, exc):
         tlog.failure("UPSTREAM_ERROR", "Network error")
         return result_class(success=False, statusCode=503, retriable=True,
             error=ToolError(code="UPSTREAM_ERROR", message=str(exc)))
+    # Must precede the ValueError branch: pydantic's ValidationError subclasses
+    # ValueError, and str(exc) embeds the offending input values. Logging that
+    # would leak upstream payload fields and misreport a parse bug as a 401.
+    if isinstance(exc, ValidationError):
+        tlog.failure("SERVER_ERROR", "Response schema validation failed")
+        return result_class(success=False, statusCode=500, retriable=False,
+            error=ToolError(code="SERVER_ERROR", message="Response schema validation failed"))
     if isinstance(exc, ValueError):
         tlog.failure("AUTH_ERROR", str(exc))
         return result_class(success=False, statusCode=401, retriable=False,
