@@ -48,7 +48,11 @@ def _handle_request_exc(result_class, tlog, exc):
 def _upstream_err(result_class, tlog, status, data, retry_after=None):
     retriable = status in (429, 500, 502, 503)
     tlog.failure("UPSTREAM_ERROR", f"HTTP {status}")
-    msg = data.get("error") or data.get("message") or f"HTTP {status}"
+    # data may be a bare list or scalar on some upstream errors — never assume a dict.
+    if isinstance(data, dict):
+        msg = data.get("error") or data.get("message") or f"HTTP {status}"
+    else:
+        msg = f"HTTP {status}"
     return result_class(
         success=False, statusCode=status, retriable=retriable,
         retry_after_seconds=retry_after,
