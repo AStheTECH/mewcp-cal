@@ -35,29 +35,41 @@ def register_profile_tools(mcp: FastMCP) -> None:
     @mcp.tool(
         name="get_my_profile",
         description="Get authenticated user profile from Cal.com",
-        annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+        annotations=ToolAnnotations(
+            readOnlyHint=True, destructiveHint=False, openWorldHint=True
+        ),
     )
     def get_my_profile() -> ProfileGetResult:
         tlog = ToolLogger(logger, "get_my_profile")
 
+        # Only the upstream call and its response normaliser belong in the try:
+        # keeping result construction out of it means tlog.success() can never
+        # fire ahead of a ValidationError raised while building the model.
         try:
             data, status, retry_after = service.api_request(
                 "GET", "/me",
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                profile = _extract_profile(data)
-                if profile is None:
-                    return _err(
-                        ProfileGetResult, tlog, "UPSTREAM_ERROR",
-                        f"HTTP {status}", 502,
-                    )
-                tlog.success()
-                return ProfileGetResult(
-                    success=True,
-                    statusCode=status,
-                    data=ProfileData(**profile),
-                )
-            return _upstream_err(ProfileGetResult, tlog, status, data, retry_after)
+            profile = _extract_profile(data) if 200 <= status < 300 else None
         except Exception as exc:
             return _handle_request_exc(ProfileGetResult, tlog, exc)
+
+        if not (200 <= status < 300):
+            return _upstream_err(ProfileGetResult, tlog, status, data, retry_after)
+        if profile is None:
+            return _err(
+                ProfileGetResult, tlog, "UPSTREAM_ERROR",
+                f"HTTP {status}", 502,
+            )
+
+        try:
+            result = ProfileGetResult(
+                success=True,
+                statusCode=status,
+                data=ProfileData(**profile),
+            )
+        except Exception as exc:
+            return _handle_request_exc(ProfileGetResult, tlog, exc)
+
+        tlog.success()
+        return result

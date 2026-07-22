@@ -43,7 +43,8 @@ def register_bookings_tools(mcp: FastMCP) -> None:
     @mcp.tool(
         name="get_bookings",
         description="Get all bookings for the user",
-        annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+        annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False,
+                                    openWorldHint=True),
     )
     def get_bookings() -> BookingListResult:
         tlog = ToolLogger(logger, "get_bookings")
@@ -51,27 +52,33 @@ def register_bookings_tools(mcp: FastMCP) -> None:
             data, status, retry_after = service.api_request(
                 "GET", "/bookings", timeout=TIMEOUT,
             )
-            if 200 <= status < 300:
-                items = _unwrap(data)
-                if not isinstance(items, list):
-                    items = [items] if items else []
-                bookings = [BookingData(**b) for b in items if isinstance(b, dict)]
-                tlog.success()
-                return BookingListResult(
-                    success=True, statusCode=status,
-                    data=BookingListData(count=len(bookings), bookings=bookings),
-                )
-            return _upstream_err(BookingListResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(BookingListResult, tlog, status, data, retry_after)
+            items = _unwrap(data)
+            if not isinstance(items, list):
+                items = [items] if items else []
         except Exception as exc:
             return _handle_request_exc(BookingListResult, tlog, exc)
+
+        bookings = [BookingData(**b) for b in items if isinstance(b, dict)]
+        result = BookingListResult(
+            success=True, statusCode=status,
+            data=BookingListData(count=len(bookings), bookings=bookings),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="get_booking",
         description="Get a specific booking by ID",
-        annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+        annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False,
+                                    openWorldHint=True),
     )
     def get_booking(
-        booking_id: str = Field(description="The booking ID to retrieve"),
+        booking_id: str = Field(
+            description="The booking ID to retrieve, as a plain string "
+                        "(e.g. '12345'). Required."
+        ),
     ) -> BookingResult:
         tlog = ToolLogger(logger, "get_booking")
 
@@ -83,15 +90,17 @@ def register_bookings_tools(mcp: FastMCP) -> None:
             data, status, retry_after = service.api_request(
                 "GET", f"/bookings/{booking_id}", timeout=TIMEOUT,
             )
-            if 200 <= status < 300:
-                tlog.success()
-                return BookingResult(
-                    success=True, statusCode=status,
-                    data=BookingData(**_unwrap(data)),
-                )
-            return _upstream_err(BookingResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(BookingResult, tlog, status, data, retry_after)
+            payload = _unwrap(data)
         except Exception as exc:
             return _handle_request_exc(BookingResult, tlog, exc)
+
+        result = BookingResult(
+            success=True, statusCode=status, data=BookingData(**payload),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="create_booking",
@@ -100,10 +109,21 @@ def register_bookings_tools(mcp: FastMCP) -> None:
                                     openWorldHint=True),
     )
     def create_booking(
-        event_type_id: int = Field(description="Event type ID"),
-        start: str = Field(description="Booking start datetime"),
-        attendee_name: str = Field(description="Attendee full name"),
-        attendee_email: str = Field(description="Attendee email address"),
+        event_type_id: int = Field(
+            description="Event type ID to book, as an integer (e.g. 42). Required."
+        ),
+        start: str = Field(
+            description="Booking start datetime in ISO 8601 / RFC 3339 UTC format "
+                        "(e.g. '2024-08-13T09:00:00Z'). Required."
+        ),
+        attendee_name: str = Field(
+            description="Attendee full name as a plain string "
+                        "(e.g. 'Ada Lovelace'). Required."
+        ),
+        attendee_email: str = Field(
+            description="Attendee email address as a plain string "
+                        "(e.g. 'ada@example.com'). Required."
+        ),
     ) -> BookingCreateResult:
         tlog = ToolLogger(logger, "create_booking")
 
@@ -127,15 +147,17 @@ def register_bookings_tools(mcp: FastMCP) -> None:
                 },
                 timeout=TIMEOUT,
             )
-            if 200 <= status < 300:
-                tlog.success()
-                return BookingCreateResult(
-                    success=True, statusCode=status,
-                    data=BookingData(**_unwrap(data)),
-                )
-            return _upstream_err(BookingCreateResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(BookingCreateResult, tlog, status, data, retry_after)
+            payload = _unwrap(data)
         except Exception as exc:
             return _handle_request_exc(BookingCreateResult, tlog, exc)
+
+        result = BookingCreateResult(
+            success=True, statusCode=status, data=BookingData(**payload),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="cancel_booking",
@@ -154,7 +176,10 @@ def register_bookings_tools(mcp: FastMCP) -> None:
                                     openWorldHint=True),
     )
     def cancel_booking(
-        booking_id: str = Field(description="The booking ID to cancel"),
+        booking_id: str = Field(
+            description="The booking ID to cancel, as a plain string "
+                        "(e.g. '12345'). Required."
+        ),
     ) -> BookingCancelResult:
         tlog = ToolLogger(logger, "cancel_booking")
 
@@ -169,22 +194,25 @@ def register_bookings_tools(mcp: FastMCP) -> None:
             if not 200 <= before_status < 300:
                 return _upstream_err(BookingCancelResult, tlog, before_status,
                                      before_data, before_retry)
-            before = BookingData(**_unwrap(before_data))
+            before_payload = _unwrap(before_data)
 
             data, status, retry_after = service.api_request(
                 "POST", f"/bookings/{booking_id}/cancel", timeout=TIMEOUT,
             )
-            if 200 <= status < 300:
-                after_payload = _unwrap(data)
-                after = BookingData(**after_payload) if isinstance(after_payload, dict) else None
-                tlog.success()
-                return BookingCancelResult(
-                    success=True, statusCode=status,
-                    data=BookingCancelData(before=before, after=after),
-                )
-            return _upstream_err(BookingCancelResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(BookingCancelResult, tlog, status, data, retry_after)
+            after_payload = _unwrap(data)
         except Exception as exc:
             return _handle_request_exc(BookingCancelResult, tlog, exc)
+
+        before = BookingData(**before_payload)
+        after = BookingData(**after_payload) if isinstance(after_payload, dict) else None
+        result = BookingCancelResult(
+            success=True, statusCode=status,
+            data=BookingCancelData(before=before, after=after),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="reschedule_booking",
@@ -200,9 +228,18 @@ def register_bookings_tools(mcp: FastMCP) -> None:
                                     openWorldHint=True),
     )
     def reschedule_booking(
-        booking_id: str = Field(description="The booking ID to reschedule"),
-        start: str = Field(description="New start time"),
-        end: str = Field(description="New end time"),
+        booking_id: str = Field(
+            description="The booking ID to reschedule, as a plain string "
+                        "(e.g. '12345'). Required."
+        ),
+        start: str = Field(
+            description="New start time in ISO 8601 / RFC 3339 UTC format "
+                        "(e.g. '2024-08-13T09:00:00Z'). Required."
+        ),
+        end: str = Field(
+            description="New end time in ISO 8601 / RFC 3339 UTC format "
+                        "(e.g. '2024-08-13T09:30:00Z'). Required."
+        ),
     ) -> BookingRescheduleResult:
         tlog = ToolLogger(logger, "reschedule_booking")
 
@@ -223,24 +260,28 @@ def register_bookings_tools(mcp: FastMCP) -> None:
             if not 200 <= before_status < 300:
                 return _upstream_err(BookingRescheduleResult, tlog, before_status,
                                      before_data, before_retry)
-            before = BookingData(**_unwrap(before_data))
+            before_payload = _unwrap(before_data)
 
             data, status, retry_after = service.api_request(
                 "POST", f"/bookings/{booking_id}/reschedule",
                 body={"start": start, "end": end},
                 timeout=TIMEOUT,
             )
-            if 200 <= status < 300:
-                after_payload = _unwrap(data)
-                after = BookingData(**after_payload) if isinstance(after_payload, dict) else None
-                tlog.success()
-                return BookingRescheduleResult(
-                    success=True, statusCode=status,
-                    data=BookingUpdateData(before=before, after=after),
-                )
-            return _upstream_err(BookingRescheduleResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(BookingRescheduleResult, tlog, status, data,
+                                     retry_after)
+            after_payload = _unwrap(data)
         except Exception as exc:
             return _handle_request_exc(BookingRescheduleResult, tlog, exc)
+
+        before = BookingData(**before_payload)
+        after = BookingData(**after_payload) if isinstance(after_payload, dict) else None
+        result = BookingRescheduleResult(
+            success=True, statusCode=status,
+            data=BookingUpdateData(before=before, after=after),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="confirm_booking",
@@ -256,7 +297,10 @@ def register_bookings_tools(mcp: FastMCP) -> None:
                                     openWorldHint=True),
     )
     def confirm_booking(
-        booking_id: str = Field(description="Booking ID"),
+        booking_id: str = Field(
+            description="ID of the pending booking to confirm, as a plain string "
+                        "(e.g. '12345'). Required."
+        ),
     ) -> BookingConfirmResult:
         tlog = ToolLogger(logger, "confirm_booking")
 
@@ -271,22 +315,25 @@ def register_bookings_tools(mcp: FastMCP) -> None:
             if not 200 <= before_status < 300:
                 return _upstream_err(BookingConfirmResult, tlog, before_status,
                                      before_data, before_retry)
-            before = BookingData(**_unwrap(before_data))
+            before_payload = _unwrap(before_data)
 
             data, status, retry_after = service.api_request(
                 "POST", f"/bookings/{booking_id}/confirm", timeout=TIMEOUT,
             )
-            if 200 <= status < 300:
-                after_payload = _unwrap(data)
-                after = BookingData(**after_payload) if isinstance(after_payload, dict) else None
-                tlog.success()
-                return BookingConfirmResult(
-                    success=True, statusCode=status,
-                    data=BookingUpdateData(before=before, after=after),
-                )
-            return _upstream_err(BookingConfirmResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(BookingConfirmResult, tlog, status, data, retry_after)
+            after_payload = _unwrap(data)
         except Exception as exc:
             return _handle_request_exc(BookingConfirmResult, tlog, exc)
+
+        before = BookingData(**before_payload)
+        after = BookingData(**after_payload) if isinstance(after_payload, dict) else None
+        result = BookingConfirmResult(
+            success=True, statusCode=status,
+            data=BookingUpdateData(before=before, after=after),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="mark_booking_absent",
@@ -302,7 +349,10 @@ def register_bookings_tools(mcp: FastMCP) -> None:
                                     openWorldHint=True),
     )
     def mark_booking_absent(
-        booking_id: str = Field(description="Booking ID"),
+        booking_id: str = Field(
+            description="ID of the booking to mark as absent, as a plain string "
+                        "(e.g. '12345'). Required."
+        ),
     ) -> BookingAbsentResult:
         tlog = ToolLogger(logger, "mark_booking_absent")
 
@@ -317,19 +367,22 @@ def register_bookings_tools(mcp: FastMCP) -> None:
             if not 200 <= before_status < 300:
                 return _upstream_err(BookingAbsentResult, tlog, before_status,
                                      before_data, before_retry)
-            before = BookingData(**_unwrap(before_data))
+            before_payload = _unwrap(before_data)
 
             data, status, retry_after = service.api_request(
                 "POST", f"/bookings/{booking_id}/absence", timeout=TIMEOUT,
             )
-            if 200 <= status < 300:
-                after_payload = _unwrap(data)
-                after = BookingData(**after_payload) if isinstance(after_payload, dict) else None
-                tlog.success()
-                return BookingAbsentResult(
-                    success=True, statusCode=status,
-                    data=BookingUpdateData(before=before, after=after),
-                )
-            return _upstream_err(BookingAbsentResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(BookingAbsentResult, tlog, status, data, retry_after)
+            after_payload = _unwrap(data)
         except Exception as exc:
             return _handle_request_exc(BookingAbsentResult, tlog, exc)
+
+        before = BookingData(**before_payload)
+        after = BookingData(**after_payload) if isinstance(after_payload, dict) else None
+        result = BookingAbsentResult(
+            success=True, statusCode=status,
+            data=BookingUpdateData(before=before, after=after),
+        )
+        tlog.success()
+        return result

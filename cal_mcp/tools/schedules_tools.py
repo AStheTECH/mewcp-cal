@@ -37,18 +37,21 @@ def register_schedules_tools(mcp: FastMCP) -> None:
                 "GET", "/schedules",
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                payload = data.get("data") if isinstance(data, dict) else data
-                items = payload if isinstance(payload, list) else []
-                schedules = [ScheduleData(**item) for item in items if isinstance(item, dict)]
-                tlog.success()
-                return ScheduleListResult(
-                    success=True, statusCode=status,
-                    data=ScheduleListData(count=len(schedules), schedules=schedules),
-                )
-            return _upstream_err(ScheduleListResult, tlog, status, data, retry_after)
         except Exception as exc:
             return _handle_request_exc(ScheduleListResult, tlog, exc)
+
+        if not (200 <= status < 300):
+            return _upstream_err(ScheduleListResult, tlog, status, data, retry_after)
+
+        payload = data.get("data") if isinstance(data, dict) else data
+        items = payload if isinstance(payload, list) else []
+        schedules = [ScheduleData(**item) for item in items if isinstance(item, dict)]
+        result = ScheduleListResult(
+            success=True, statusCode=status,
+            data=ScheduleListData(count=len(schedules), schedules=schedules),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="get_schedule",
@@ -56,7 +59,14 @@ def register_schedules_tools(mcp: FastMCP) -> None:
         annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=True),
     )
     def get_schedule(
-        schedule_id: str = Field(description="The schedule ID"),
+        schedule_id: str = Field(
+            description=(
+                "The schedule ID identifying the schedule to retrieve. "
+                "Plain string containing the Cal.com numeric schedule identifier "
+                "(for example \"12345\"). Required — the call fails with a "
+                "validation error if omitted or blank."
+            )
+        ),
     ) -> ScheduleResult:
         tlog = ToolLogger(logger, "get_schedule")
 
@@ -68,16 +78,19 @@ def register_schedules_tools(mcp: FastMCP) -> None:
                 "GET", f"/schedules/{schedule_id}",
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                payload = data.get("data") if isinstance(data, dict) else None
-                tlog.success()
-                return ScheduleResult(
-                    success=True, statusCode=status,
-                    data=ScheduleData(**payload) if isinstance(payload, dict) else None,
-                )
-            return _upstream_err(ScheduleResult, tlog, status, data, retry_after)
         except Exception as exc:
             return _handle_request_exc(ScheduleResult, tlog, exc)
+
+        if not (200 <= status < 300):
+            return _upstream_err(ScheduleResult, tlog, status, data, retry_after)
+
+        payload = data.get("data") if isinstance(data, dict) else None
+        result = ScheduleResult(
+            success=True, statusCode=status,
+            data=ScheduleData(**payload) if isinstance(payload, dict) else None,
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="get_default_schedule",
@@ -92,16 +105,19 @@ def register_schedules_tools(mcp: FastMCP) -> None:
                 "GET", "/schedules/default",
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                payload = data.get("data") if isinstance(data, dict) else None
-                tlog.success()
-                return ScheduleDefaultResult(
-                    success=True, statusCode=status,
-                    data=ScheduleData(**payload) if isinstance(payload, dict) else None,
-                )
-            return _upstream_err(ScheduleDefaultResult, tlog, status, data, retry_after)
         except Exception as exc:
             return _handle_request_exc(ScheduleDefaultResult, tlog, exc)
+
+        if not (200 <= status < 300):
+            return _upstream_err(ScheduleDefaultResult, tlog, status, data, retry_after)
+
+        payload = data.get("data") if isinstance(data, dict) else None
+        result = ScheduleDefaultResult(
+            success=True, statusCode=status,
+            data=ScheduleData(**payload) if isinstance(payload, dict) else None,
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="create_schedule",
@@ -109,7 +125,13 @@ def register_schedules_tools(mcp: FastMCP) -> None:
         annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=True),
     )
     def create_schedule(
-        name: str = Field(description="Name of the schedule to create"),
+        name: str = Field(
+            description=(
+                "Name of the schedule to create, as shown in Cal.com. "
+                "Plain free-text string (for example \"Working Hours\"). "
+                "Required — the call fails with a validation error if omitted or blank."
+            )
+        ),
     ) -> ScheduleCreateResult:
         tlog = ToolLogger(logger, "create_schedule")
 
@@ -121,13 +143,16 @@ def register_schedules_tools(mcp: FastMCP) -> None:
                 "POST", "/schedules", body={"name": name},
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                payload = data.get("data") if isinstance(data, dict) else None
-                tlog.success()
-                return ScheduleCreateResult(
-                    success=True, statusCode=status,
-                    data=ScheduleData(**payload) if isinstance(payload, dict) else None,
-                )
-            return _upstream_err(ScheduleCreateResult, tlog, status, data, retry_after)
         except Exception as exc:
             return _handle_request_exc(ScheduleCreateResult, tlog, exc)
+
+        if not (200 <= status < 300):
+            return _upstream_err(ScheduleCreateResult, tlog, status, data, retry_after)
+
+        payload = data.get("data") if isinstance(data, dict) else None
+        result = ScheduleCreateResult(
+            success=True, statusCode=status,
+            data=ScheduleData(**payload) if isinstance(payload, dict) else None,
+        )
+        tlog.success()
+        return result

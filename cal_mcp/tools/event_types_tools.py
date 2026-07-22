@@ -61,7 +61,8 @@ def register_event_types_tools(mcp: FastMCP) -> None:
     @mcp.tool(
         name="get_event_types",
         description="List all event types for the user",
-        annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+        annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False,
+                                    openWorldHint=True),
     )
     def get_event_types() -> EventTypeListResult:
         tlog = ToolLogger(logger, "get_event_types")
@@ -71,28 +72,37 @@ def register_event_types_tools(mcp: FastMCP) -> None:
                 "GET", "/event-types",
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                items = _extract_event_types(data)
-                tlog.success()
-                return EventTypeListResult(
-                    success=True,
-                    statusCode=status,
-                    data=EventTypeListData(
-                        count=len(items),
-                        event_types=[EventTypeData(**item) for item in items],
-                    ),
-                )
-            return _upstream_err(EventTypeListResult, tlog, status, data, retry_after)
+            if not (200 <= status < 300):
+                return _upstream_err(EventTypeListResult, tlog, status, data, retry_after)
+            items = _extract_event_types(data)
         except Exception as exc:
             return _handle_request_exc(EventTypeListResult, tlog, exc)
+
+        result = EventTypeListResult(
+            success=True,
+            statusCode=status,
+            data=EventTypeListData(
+                count=len(items),
+                event_types=[EventTypeData(**item) for item in items],
+            ),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="get_event_type",
         description="Get a specific event type by ID",
-        annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+        annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False,
+                                    openWorldHint=True),
     )
     def get_event_type(
-        event_type_id: int = Field(description="The event type ID"),
+        event_type_id: int = Field(
+            description=(
+                "The event type ID: the numeric Cal.com identifier of the event type "
+                "to retrieve, as an integer (e.g. 123456). Required — the call fails "
+                "with a validation error if omitted."
+            ),
+        ),
     ) -> EventTypeGetResult:
         tlog = ToolLogger(logger, "get_event_type")
 
@@ -107,20 +117,23 @@ def register_event_types_tools(mcp: FastMCP) -> None:
                 "GET", f"/event-types/{event_type_id}",
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                event_type = _extract_event_type(data)
-                if event_type is None:
-                    return _err(
-                        EventTypeGetResult, tlog, "UPSTREAM_ERROR",
-                        f"HTTP {status}", status,
-                    )
-                tlog.success()
-                return EventTypeGetResult(
-                    success=True, statusCode=status, data=EventTypeData(**event_type),
-                )
-            return _upstream_err(EventTypeGetResult, tlog, status, data, retry_after)
+            if not (200 <= status < 300):
+                return _upstream_err(EventTypeGetResult, tlog, status, data, retry_after)
+            event_type = _extract_event_type(data)
         except Exception as exc:
             return _handle_request_exc(EventTypeGetResult, tlog, exc)
+
+        if event_type is None:
+            return _err(
+                EventTypeGetResult, tlog, "UPSTREAM_ERROR",
+                f"HTTP {status}", status,
+            )
+
+        result = EventTypeGetResult(
+            success=True, statusCode=status, data=EventTypeData(**event_type),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="create_event_type",
@@ -129,7 +142,13 @@ def register_event_types_tools(mcp: FastMCP) -> None:
                                     openWorldHint=True),
     )
     def create_event_type(
-        title: str = Field(description="Title of the event type"),
+        title: str = Field(
+            description=(
+                "Title of the event type: the display name for the new event type, "
+                "as a plain non-empty string (e.g. '30 Minute Meeting'). Required — "
+                "the call fails with a validation error if omitted or blank."
+            ),
+        ),
     ) -> EventTypeCreateResult:
         tlog = ToolLogger(logger, "create_event_type")
 
@@ -144,17 +163,20 @@ def register_event_types_tools(mcp: FastMCP) -> None:
                 "POST", "/event-types", body={"title": title},
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                event_type = _extract_event_type(data)
-                if event_type is None:
-                    return _err(
-                        EventTypeCreateResult, tlog, "UPSTREAM_ERROR",
-                        f"HTTP {status}", status,
-                    )
-                tlog.success()
-                return EventTypeCreateResult(
-                    success=True, statusCode=status, data=EventTypeData(**event_type),
-                )
-            return _upstream_err(EventTypeCreateResult, tlog, status, data, retry_after)
+            if not (200 <= status < 300):
+                return _upstream_err(EventTypeCreateResult, tlog, status, data, retry_after)
+            event_type = _extract_event_type(data)
         except Exception as exc:
             return _handle_request_exc(EventTypeCreateResult, tlog, exc)
+
+        if event_type is None:
+            return _err(
+                EventTypeCreateResult, tlog, "UPSTREAM_ERROR",
+                f"HTTP {status}", status,
+            )
+
+        result = EventTypeCreateResult(
+            success=True, statusCode=status, data=EventTypeData(**event_type),
+        )
+        tlog.success()
+        return result

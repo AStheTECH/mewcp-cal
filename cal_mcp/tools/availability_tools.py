@@ -79,7 +79,12 @@ def register_availability_tools(mcp: FastMCP) -> None:
     def get_availability(
         date: str = Field(
             ...,
-            description="Date in YYYY-MM-DD format"
+            description=(
+                "Calendar day to look up available slots for, as a plain string "
+                "in YYYY-MM-DD format (ISO 8601 calendar date). Required — there "
+                "is no default, and the call fails with VALIDATION_ERROR if it is "
+                "omitted or not in YYYY-MM-DD format."
+            )
         )
     ) -> AvailabilityResult:
         tlog = ToolLogger(logger, "get_availability")
@@ -93,21 +98,25 @@ def register_availability_tools(mcp: FastMCP) -> None:
                 "GET", "/availability", params={"date": date},
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                slots = [SlotData(**slot) for slot in _extract_slots(data)]
-                body = _unwrap(data)
-                time_zone = body.get("timeZone") if isinstance(body, dict) else None
-                tlog.success()
-                return AvailabilityResult(
-                    success=True, statusCode=status,
-                    data=AvailabilityData(
-                        date=date, timeZone=time_zone,
-                        count=len(slots), slots=slots,
-                    ),
-                )
-            return _upstream_err(AvailabilityResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(AvailabilityResult, tlog, status, data,
+                                     retry_after)
+            raw_slots = _extract_slots(data)
+            body = _unwrap(data)
         except Exception as exc:
             return _handle_request_exc(AvailabilityResult, tlog, exc)
+
+        slots = [SlotData(**slot) for slot in raw_slots]
+        time_zone = body.get("timeZone") if isinstance(body, dict) else None
+        result = AvailabilityResult(
+            success=True, statusCode=status,
+            data=AvailabilityData(
+                date=date, timeZone=time_zone,
+                count=len(slots), slots=slots,
+            ),
+        )
+        tlog.success()
+        return result
 
     @mcp.tool(
         name="get_busy_times",
@@ -123,13 +132,17 @@ def register_availability_tools(mcp: FastMCP) -> None:
                 "GET", "/busy-times",
                 timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
             )
-            if 200 <= status < 300:
-                busy = [BusyTimeData(**item) for item in _extract_busy_times(data)]
-                tlog.success()
-                return BusyTimeListResult(
-                    success=True, statusCode=status,
-                    data=BusyTimeListData(count=len(busy), busy_times=busy),
-                )
-            return _upstream_err(BusyTimeListResult, tlog, status, data, retry_after)
+            if not 200 <= status < 300:
+                return _upstream_err(BusyTimeListResult, tlog, status, data,
+                                     retry_after)
+            raw_busy = _extract_busy_times(data)
         except Exception as exc:
             return _handle_request_exc(BusyTimeListResult, tlog, exc)
+
+        busy = [BusyTimeData(**item) for item in raw_busy]
+        result = BusyTimeListResult(
+            success=True, statusCode=status,
+            data=BusyTimeListData(count=len(busy), busy_times=busy),
+        )
+        tlog.success()
+        return result
