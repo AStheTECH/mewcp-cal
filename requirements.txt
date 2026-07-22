@@ -1,0 +1,3 @@
+fastmcp
+fastmcp-credentials>=0.1.1
+requests

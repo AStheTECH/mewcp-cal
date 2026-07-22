@@ -1,0 +1,3 @@
+CAL_API_BASE = "https://api.cal.com/v2"
+CAL_API_VERSION = "2024-06-11"
+API_TIMEOUT = 30

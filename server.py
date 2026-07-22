@@ -1,71 +1,36 @@
 from fastmcp import FastMCP
-import requests
-from dotenv import load_dotenv
-import os
+from fastmcp_credentials import CredentialMiddleware, HeaderCredentialBackend
 
-mcp = FastMCP("Cal.com MCP")
-load_dotenv()
+from cal_mcp.cli import parse_args
+from cal_mcp.tools import register_tools
 
-API_KEY = os.getenv("CAL_API_KEY")
-if not API_KEY:
-    raise ValueError("CAL_API_KEY not found in .env")
+backend = HeaderCredentialBackend()
 
-@mcp.tool
-def get_event_types():
+mcp = FastMCP(
+    "MewCP Cal MCP Server", middleware=[CredentialMiddleware(backend, "static")]
+)
 
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "cal-api-version": "2024-06-11"
-    }
+register_tools(mcp)
 
-    response = requests.get(
-        "https://api.cal.com/v2/event-types",
-        headers=headers
-    )
-
-    return response.json()
-@mcp.tool
-def get_my_profile():
-
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "cal-api-version": "2024-06-11"
-    }
-
-    response = requests.get(
-        "https://api.cal.com/v2/me",
-        headers=headers
-    )
-
-    return response.json()
-@mcp.tool
-def get_schedules():
-
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "cal-api-version": "2024-06-11"
-    }
-
-    response = requests.get(
-        "https://api.cal.com/v2/schedules",
-        headers=headers
-    )
-
-    return response.json()
-@mcp.tool
-def get_bookings():
-
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "cal-api-version": "2024-06-11"
-    }
-
-    response = requests.get(
-        "https://api.cal.com/v2/bookings",
-        headers=headers
-    )
-
-    return response.json()
+app = mcp.http_app(path="/mcp", transport="streamable-http", stateless_http=True)
 
 if __name__ == "__main__":
-    mcp.run()
+    args = parse_args()
+
+    run_kwargs = {}
+
+    if args.transport:
+        run_kwargs["transport"] = args.transport
+
+    if args.host:
+        run_kwargs["host"] = args.host
+
+    if args.port:
+        run_kwargs["port"] = args.port
+
+    try:
+        mcp.run(**run_kwargs)
+
+    except Exception as e:
+        print(f"Failed to start server: {e}")
+        raise
